@@ -1,5 +1,10 @@
-%Calls GWEMS.m to create PsiM and PsiP for 6 different audio files.
-%Results are saved in .mat and .csv files
+% Calls GWEMS.m to create PsiM and PsiP for 6 different audio files.
+% Results are saved in .mat and .csv files.
+%
+% Also contains example code to compare new results with reference results
+%
+% Written January 12, 2023 by S. Voran at Institute for Telecommunication
+% Sciences in Boulder, Colorado, United States: svoran@ntia.gov
 
 fnames = {...
 'audioShort16k.wav'     %fs = 16k,      length appx. 1.6 sec
@@ -18,9 +23,13 @@ for i= 1:6 %Loop over audio files listed
 end
 
 %Example of how to compare new results with reference results
-Ref  = load('audio48kRef.mat');
-New = load('audio48k.mat');
-absError = abs(Ref.PsiM - Test.PsiM);
+Ref  = load('audio48kRef.mat'); %load reference results
+New = load('audio48k.mat');     %load new results
+
+absError = abs(Ref.PsiM - New.PsiM); %calc. absolute difference for PsiM
+%Display mean
 disp(['Mean absolute PsiM error is: ', num2str( mean( absError(:) ) )])
-absError = abs(Ref.PsiP - Test.PsiP);
+
+absError = abs(Ref.PsiP - New.PsiP); %calc. absolute difference for PsiM
+%Display mean
 disp(['Mean absolute PsiP error is: ', num2str( mean( absError(:) ) )])

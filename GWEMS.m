@@ -26,6 +26,9 @@ function [PsiM, PsiP] = GWEMS(audioFilename)
 % bands above 32 cover the range from 8 kHz up to near the Nyquist
 % frequency for the given sample rate.
 %
+% Written January 12, 2023 by S. Voran at Institute for Telecommunication
+% Sciences in Boulder, Colorado, United States: svoran@ntia.gov
+%
 % Written and tested using MATLAB Version: 9.11.0.1809720 (R2021b) Update 1
 %
 % Note that Matlab uses one-based indexing, while the papers use
