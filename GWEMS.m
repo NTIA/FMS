@@ -11,7 +11,7 @@ function [PsiM, PsiP] = GWEMS(audioFilename)
 % or 44.1k.  Duration needs to be at least 60 ms. If file has more than
 % one channel, then channel 1 is used.
 %
-% PsiM and PsiP are matricies with size Nmel by 8. They contain the
+% PsiM and PsiP are matrices with size Nmel by 8. They contain the
 % magnitude and phase GWEMS, respectively, as given in Eqn. (6).
 % Nmel depends on fs:
 %  fs      Nmel
