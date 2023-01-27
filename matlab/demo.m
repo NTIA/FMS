@@ -5,7 +5,7 @@
 %
 % Written January 12, 2023 by S. Voran at Institute for Telecommunication
 % Sciences in Boulder, Colorado, United States: svoran@ntia.gov
-wav_path = 'wavs'; %Path containing wav files
+wav_path = '../wavs'; %Path containing wav files
 fnames = {...
 'audioShort16k.wav'     %fs = 16k,      length appx. 1.6 sec
 'audioLong16k.wav'      %fs = 16k,      length appx. 3.5 sec
@@ -13,7 +13,7 @@ fnames = {...
 'audio32k.wav'          %fs = 32k,      length appx. 2.9 sec
 'audio44k.wav'          %fs = 44.1k,    length appx. 5.8 sec
 'audio48k.wav'};        %fs = 48k,      length appx. 3.0 sec
-reference_folder = 'reference_files';
+reference_folder = '../reference_files';
 output_folder = 'output';
 if ~exist(output_folder, 'dir')
     mkdir(output_folder)
