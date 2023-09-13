@@ -1,4 +1,4 @@
-name: gwems
+name: fms
 channels:
   - conda-forge
   - defaults

@@ -5,16 +5,13 @@ import numpy as np
 from scipy.io import wavfile
 
 
-def gwems(audio_filename):
+def fms(audio_filename):
     """
-    Creates Global Wideband Entire Modulation Spectrum (GWEMS).
+    Creates fixed-size modulation spectrum (FMS).
 
-    Creates Global Wideband Entire Modulation Spectrum (GWEMS) as described in
-    "The Global Wideband Entire Modulation Spectrum: A Powerful, Compact,
-    Fixed-Size Representation for Perceptually-Consistent Speech Evaluations"
-    and "Filterbanks Used in GWEMS" both by Stephen Voran, Institute for
-    Telecommunication Sciences in Boulder, Colorado.
-        Usage: psi_m, psi_p = gwems(audio_filename)
+    Creates fixed-size modulation spectrum (FMS) as described in
+    XXX.
+        Usage: psi_m, psi_p = fms(audio_filename)
 
     audio_filename is expected to be a .wav file with
 
@@ -29,14 +26,14 @@ def gwems(audio_filename):
     Returns
     -------
     psi_m : TODO: psi_m type
-        Magnitude GWEMS.
+        Magnitude FMS.
     psi_p : TODO: psi_p type
-        Phase GWEMS.
+        Phase FMS.
 
     Notes
     -----
     PsiM and PsiP are matrices with size Nmel by 8. They contain the
-    magnitude and phase GWEMS, respectively, as given in Eqn. (6).
+    magnitude and phase FMS, respectively, as given in Eqn. (6).
     Nmel depends on fs:
     fs      Nmel
     ------   ----
@@ -71,7 +68,7 @@ def gwems(audio_filename):
     # Check for sufficient audio duration
     if len(x) / fs < 0.060:
         raise ValueError(
-            "File contains less than 60 ms of audio which is not suitable for GWEMS"
+            "File contains less than 60 ms of audio which is not suitable for FMS"
         )
 
     Nw, Ns, Nmel, fu = get_constants(fs)
@@ -154,7 +151,7 @@ def mel2hz(mel):
 
 def get_constants(fs):
     """
-    Return sample rate dependent GWEMS constants.
+    Return sample rate dependent FMS constants.
 
     Parameters
     ----------
