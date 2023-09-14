@@ -3,6 +3,7 @@ import os
 import numpy as np
 
 from scipy.io import wavfile
+from torchaudio import load
 
 
 def fms(audio_filename):
@@ -60,13 +61,17 @@ def fms(audio_filename):
         raise ValueError("audio_filename is expected to name a .wav file.")
 
     # Read audio samples and sample rate
-    fs, x = wavfile.read(audio_filename)
+    # fs, x = wavfile.read(audio_filename)
+    x, fs = load(audio_filename)
     # Extract channel 1
     if len(x.shape) > 1:
-        x = x[:, 0]
-
+        # x = x[:, 0]
+        x = x[0]
+    x = x[None, :]
+    # Number of audio samples available
+    Na = x.shape[1]
     # Check for sufficient audio duration
-    if len(x) / fs < 0.060:
+    if Na / fs < 0.060:
         raise ValueError(
             "File contains less than 60 ms of audio which is not suitable for FMS"
         )
@@ -78,15 +83,60 @@ def fms(audio_filename):
     #   - Nmel (number of mel spectrum samples)
     #   - fu (upper limit of analysis in Hz)
 
-    # Number of audio samples available
-    Na = len(x)
     # Calc. number of frames those samples allow
-    Nf = np.floor((Na - Nw) / Ns) + 1
+    Nf = np.floor((Na - Nw) / Ns).astype(int) + 1
     # Set number of samples in DFT
     Nt = 2 * Nw
 
     # Make matrix Theta which implements filter bank that creates mel specrrum
     Theta = make_theta(fs, Nt, Nmel, fu)
+
+    # Make matrix Phi which implements filterbank that creates modulation
+    # spectrum
+    Phi = makePhi(fs, Ns, Nf)
+
+    # Generate normalized periodic Hamming Window with Nw samples - Eqn. (1)
+    hammingWindow = (0.54 - 0.46 * np.cos(2 * np.pi * np.arange(0, Nw) / Nw)) / (
+        0.54 * Nw
+    )
+
+    # Create matrix of windowed audio sample frames - Eqn. (1)
+    xW = np.zeros((Nf, Nw))
+    for f in range(Nf):
+        sample_ix = np.arange(f * Ns, f * Ns + Nw)
+        xW[f, :] = np.multiply(x[0, sample_ix], hammingWindow)
+
+    # Zero pad matrix so frames have length Nt  - Eqn. (2)
+    xTildeW = np.concatenate([xW, np.zeros((Nf, Nt - Nw))], axis=1)
+
+    # DFT all frames - Eqn. (3)
+    # X = fft(xTildeW, [], 2)
+    X = np.fft.fft(xTildeW, axis=1)
+
+    # Convert to mel spectrum - Eqn. (4)
+    ss_ix = np.arange(Nt / 2 + 1).astype(int)
+    P = np.matmul(np.abs(X[:, ss_ix]), Theta)
+    # P = np.abs( X[:, 1:Nt/2 + 1] ) * Theta
+
+    # Generate unnormalized symmetric Hamming Window with Nf samples - Eqn. (5)
+    hammingWindow = 0.54 - 0.46 * np.cos(2 * np.pi * np.arange(0, Nf) / (Nf - 1))
+
+    # Window and DFT all mel bins across frames - Eqn. (5)
+    Gamma = np.fft.fft(
+        np.multiply(P, hammingWindow[:, np.newaxis]), axis=0
+    ).T.conjugate()
+
+    # Number of Hz-scale spectral samples produced by DFT
+    N = np.floor(Nf / 2) + 1
+    # Filter DFT result to create modulation spectrum - Eqn. (6)
+    N_ix = np.arange(N).astype(int)
+    PsiM = np.matmul(np.abs(Gamma[:, N_ix]), Phi)
+    PsiP = np.matmul(np.angle(Gamma[:, N_ix]), Phi)
+
+    # (Straight from Matlab warning): Unwrapped phase might be a good option to
+    # try in some cases
+    # PsiP = unwrap( angle( Gamma(:,1:N) ) )*Phi
+    return PsiM, PsiP
 
 
 def make_theta(fs, Nt, Nmel, fu):
@@ -110,9 +160,123 @@ def make_theta(fs, Nt, Nmel, fu):
         NHertz by Nmel matrix representing filter bank that creates mel
         spectrum. NHertz = Nt/2 + 1.
     """
+    # Convert upper analysis limit from Hz to mel, GWEMS filter paper Eqn. (1)
+    fTildeU = 2595 * np.log10(1 + fu / 700)
 
-    # TODO: finish make_theta
-    print("TODO")
+    # %Find mel interval, GWEMS filter paper Eqn. (2)
+    deltaTilda = fTildeU / (Nmel + 1)
+
+    # Find band limits and centers in mel
+    bTilda = deltaTilda * np.arange(0, Nmel + 2)
+
+    # %Convert to Hz, GWEMS filter paper Eqn. (3)
+    # b = 700 * (10.0 ^ (bTilda / 2595) - 1)
+    b = 700 * (np.power(10.0, (bTilda / 2595)) - 1)
+
+    # %Calculate DFT frequencies in Hz, GWEMS filter paper Eqn. (5)
+    f = np.arange(0, Nt / 2 + 1) * fs / Nt
+
+    # %Calculate filter normalizations, GWEMS filter paper Eqn. (6)
+    # eta = 1./( b(3:Nmel+2) - b(1:Nmel) )
+    eta = np.divide(1, b[2:] - b[:-2])
+
+    # Number of DFT samples
+    NHertz = Nt / 2 + 1
+
+    # Convert to ints to make python happy
+    NHertz = int(NHertz)
+    Nmel = int(Nmel)
+    # Calculate filterbank, GWEMS filter paper Eqn. (4)
+    Theta = np.zeros((NHertz, Nmel))
+
+    for i in range(Nmel):
+        for k in range(NHertz):
+            if b[i] <= f[k] and f[k] < b[i + 1]:
+                # Lower slope
+                Theta[k, i] = eta[i] * (f[k] - b[i]) / (b[i + 1] - b[i])
+            elif b[i + 1] <= f[k] and f[k] < b[i + 2]:
+                # Upper slope
+                Theta[k, i] = eta[i] * (1 - (f[k] - b[i + 1]) / (b[i + 2] - b[i + 1]))
+            else:
+                Theta[k, i] = 0
+
+    return Theta
+
+
+def makePhi(fs, Ns, Nf):
+    """
+    Make matrix Phi which implements a filterbank that creates modulation
+    spectrum
+
+    Parameters
+    ----------
+    fs : int
+        Audio sample rate
+    Ns : int
+        Stride of framing in samples (frame rate is fs/Ns frames per sec)
+    Nf : int
+        Number of frames to be processed
+
+    Returns
+    -------
+    Phi : np.ndarray
+        N by Nmod, where N = floor(Nf/2) + 1 and Nmod is 8
+    """
+    # number of spectral samples available
+    N = np.floor(Nf / 2).astype(int) + 1
+    # set number of modulation spectrum samples
+    Nmod = 8
+
+    # Calculate log-scale frequency interval, GWEMS filter paper Eqn. (8)
+    DeltaBar = (np.log2(128) - np.log2(4)) / (Nmod - 1)
+
+    # Calculate log-scale initial filter center frequencies,
+    # GWEMS filter paper Eqn. (9)
+    bBar = np.log2(4) + np.arange(0, Nmod) * DeltaBar
+
+    # Calculate DFT bin spacing, GWEMS filter paper Eqn. (10)
+    Deltah = fs / (Ns * Nf)
+
+    # Calculate DFT bin log frequencies, GWEMS filter paper Eqn. (11)
+    fBar = np.log2(np.arange(0, N) * Deltah)
+
+    # Adjust log-scale initial filter center frequencies to fall on DFT bins,
+    # GWEMS filter paper Eqn. (12)
+    # bBarPrime = np.log2( np.round( ( 2.^bBar )/Deltah ) * Deltah );
+    bBarPrime = np.log2(np.round(np.power(2, bBar) / Deltah) * Deltah)
+
+    # Calculate filter half-widths, GWEMS filter paper Eqn. (13)
+    deltaBar = DeltaBar / (2 - np.sqrt(2))
+
+    # %Calculate filter weights to account for number of DFT samples spanned
+    # %by each filter, GWEMS filter paper Eqn. (15)
+    nu_m = np.zeros((1, Nmod))
+    nu = []
+    for m in range(Nmod):
+        cond1 = -deltaBar <= (fBar - bBarPrime[m])
+        cond2 = (fBar - bBarPrime[m]) < deltaBar
+        sum = np.sum(cond1 & cond2)
+        if sum == 0:
+            val = np.inf
+        else:
+            val = 1 / sum
+
+        nu.append(val)
+
+    # Calculate filterbank, GWEMS filter paper Eqn. (14)
+    Phi = np.zeros((N, Nmod))
+
+    for m in range(Nmod):
+        for k in range(N):
+            if (bBarPrime[m] - deltaBar <= fBar[k]) and (fBar[k] < bBarPrime[m]):
+                # Lower slope
+                Phi[k, m] = nu[m] * (fBar[k] - (bBarPrime[m] - deltaBar)) / deltaBar
+            elif (bBarPrime[m] <= fBar[k]) and (fBar[k] < bBarPrime[m] + deltaBar):
+                # Upper slope
+                Phi[k, m] = nu[m] * (1 - (fBar[k] - bBarPrime[m]) / deltaBar)
+            else:
+                Phi[k, m] = 0
+    return Phi
 
 
 def hz2mel(hz):
