@@ -205,7 +205,7 @@ function Phi = makePhi(fs, Ns, Nf)
 % Ns is stride of framing in samples (frame rate is fs/Ns frames per sec)
 % Nf is the number of frames to be processed
 %
-% Phi is N by Nmod, where N =  floor(Nf/2) + 1 and N is 8
+% Phi is N by Nmod, where N =  floor(Nf/2) + 1 and Nmod is 8
 
 N = floor(Nf/2) + 1; %number of spectral samples available
 Nmod = 8; %set number of modulation spectrum samples
