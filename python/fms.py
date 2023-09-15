@@ -270,8 +270,10 @@ def makePhi(fs, Ns, Nf):
     # Calculate DFT bin spacing, GWEMS filter paper Eqn. (10)
     Deltah = fs / (Ns * Nf)
 
-    # Calculate DFT bin log frequencies, GWEMS filter paper Eqn. (11)
-    fBar = np.log2(np.arange(0, N) * Deltah)
+    # Ignore warning on log2(0)
+    with np.errstate(divide="ignore"):
+        # Calculate DFT bin log frequencies, GWEMS filter paper Eqn. (11)
+        fBar = np.log2(np.arange(0, N) * Deltah)
 
     # Adjust log-scale initial filter center frequencies to fall on DFT bins,
     # GWEMS filter paper Eqn. (12)
@@ -283,7 +285,6 @@ def makePhi(fs, Ns, Nf):
 
     # %Calculate filter weights to account for number of DFT samples spanned
     # %by each filter, GWEMS filter paper Eqn. (15)
-    nu_m = np.zeros((1, Nmod))
     nu = []
     for m in range(Nmod):
         cond1 = -deltaBar <= (fBar - bBarPrime[m])
