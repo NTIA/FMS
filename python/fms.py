@@ -3,7 +3,8 @@ import os
 import numpy as np
 
 from scipy.io import wavfile
-from torchaudio import load
+
+# from torchaudio import load
 
 
 def fms(audio_filename):
@@ -61,8 +62,7 @@ def fms(audio_filename):
         raise ValueError("audio_filename is expected to name a .wav file.")
 
     # Read audio samples and sample rate
-    # fs, x = wavfile.read(audio_filename)
-    x, fs = load(audio_filename)
+    fs, x = load_audio(audio_filename)
     # Extract channel 1
     if len(x.shape) > 1:
         # x = x[:, 0]
@@ -137,6 +137,43 @@ def fms(audio_filename):
     # try in some cases
     # PsiP = unwrap( angle( Gamma(:,1:N) ) )*Phi
     return PsiM, PsiP
+
+
+def load_audio(audio_filename):
+    """
+    Load floating point representation of audio file
+
+    Parameters
+    ----------
+    audio_filename : str
+        Path to audio file.
+
+    Returns
+    -------
+    fs : int
+        Sample rate.
+    x : np.ndarray
+        Floating point representation of audio file.
+
+    Raises
+    ------
+    RuntimeError
+        Audio is not unsigned 8 bit int, signed 16 or 32 bit int, or floating
+        point.
+    """
+    fs, x = wavfile.read(audio_filename)
+    # Convert x to float representation (between -1 and 1)
+    if np.issubdtype(x.dtype, np.floating):
+        x = x
+    elif x.dtype is np.dtype("uint8"):
+        x = (x.astype("float") - 64) / 64
+    elif x.dtype is np.dtype("int16"):
+        x = x.astype("float") / (2**15)
+    elif x.dtype is np.dtype("int32"):
+        x = x.astype("float") / (2**31)
+    else:
+        raise RuntimeError(f"unknown audio type '{x.dtype}'")
+    return fs, x
 
 
 def make_theta(fs, Nt, Nmel, fu):
