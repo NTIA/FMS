@@ -13,7 +13,7 @@ fnames = {...
 'audio32k.wav'          %fs = 32k,      length appx. 2.9 sec
 'audio44k.wav'          %fs = 44.1k,    length appx. 5.8 sec
 'audio48k.wav'};        %fs = 48k,      length appx. 3.0 sec
-reference_folder = '../reference_files';
+reference_folder = 'reference_files';
 output_folder = 'output';
 if ~exist(output_folder, 'dir')
     mkdir(output_folder)
