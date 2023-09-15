@@ -1,18 +1,18 @@
-# GWEMS MATLAB® Code
-Implements Global Wideband Entire Modulation Spectrum in GWEMS.m.
-Demo.m applies GWEMS.m to 6 audio files and saves the results in .mat and .csv files.
+# FMS MATLAB® Code
+Implements fixed-size modulation spectrum in FMS.m.
+Demo.m applies FMS.m to 6 audio files and saves the results in .mat and .csv files.
 
 # How to run
 * Clone to local repository  
 * Open using MATLAB or Octave  
-* Run demo.m or GWEMS.m.
+* Run demo.m or FMS.m.
 
-Further details below (or type `help GWEMS` in the MATLAB command window).
+Further details below (or type `help FMS` in the MATLAB command window).
 
 # Usage
 
 ```
-[PsiM, PsiP] = GWEMS(audioFilename)
+[PsiM, PsiP] = FMS(audioFilename)
 ```
 
 ## Inputs
@@ -21,7 +21,7 @@ The only input is audioFilename.  This is expected to name a .wav file with fs =
 
 ## Outputs
 
-The outputs are PsiM and PsiP. Each is a matrix with size Nmel by 8. They contain the magnitude and phase GWEMS, respectively. Nmel depends on fs:
+The outputs are PsiM and PsiP. Each is a matrix with size Nmel by 8. They contain the magnitude and phase FMS, respectively. Nmel depends on fs:
 
 |   fs     |  Nmel   |
 |----------|---------|
@@ -33,7 +33,7 @@ The outputs are PsiM and PsiP. Each is a matrix with size Nmel by 8. They contai
 
 ## Demo Code
 
-The script demo.m reads in each of six provided audio (.wav) files and calls gwems.m for each one.  This produces PsiM and PsiP.  These two results are stored in a single Matlab data file (.mat). In addition, each is stored individual in a CSV (.csv) file. 
+The script demo.m reads in each of six provided audio (.wav) files and calls FMS.m for each one.  This produces PsiM and PsiP.  These two results are stored in a single Matlab data file (.mat). In addition, each is stored individual in a CSV (.csv) file. 
 
 The sample rates and durations of the six audio files are:
 

@@ -1,18 +1,15 @@
-function [PsiM, PsiP] = GWEMS(audioFilename)
-% Creates Global Wideband Entire Modulation Spectrum (GWEMS) as described in
-% "The Global Wideband Entire Modulation Spectrum: A Powerful, Compact,
-% Fixed-Size Representation for Perceptually-Consistent Speech Evaluations"
-% and "Filterbanks Used in GWEMS" both by Stephen Voran, Institute for
-% Telecommunication Sciences in Boulder, Colorado.
+function [PsiM, PsiP] = FMS(audioFilename)
+% Creates fixed-size modulation spectrum (FMS) as described in
+% XXX
 %
-% Usage: [PsiM, PsiP] = GWEMS(audioFilename)
+% Usage: [PsiM, PsiP] = FMS(audioFilename)
 %
 % audioFilename is expected to be a .wav file with fs = 16, 32, 48, 22.05
 % or 44.1k.  Duration needs to be at least 60 ms. If file has more than
 % one channel, then channel 1 is used.
 %
 % PsiM and PsiP are matrices with size Nmel by 8. They contain the
-% magnitude and phase GWEMS, respectively, as given in Eqn. (6).
+% magnitude and phase FMS, respectively, as given in Eqn. (6).
 % Nmel depends on fs:
 %  fs      Nmel
 %-------   ----
@@ -48,7 +45,7 @@ x = x(:,1); %extract channel 1
 
 if length(x)/fs < .060
     error(['File contains less than 60 ms of audio which is not ' ...
-        'suitable for GWEMS'])
+        'suitable for FMS'])
 end
 
 [Nw, Ns, Nmel, fu] = getConstants(fs);
@@ -161,27 +158,27 @@ function Theta = makeTheta(fs, Nt, Nmel, fu)
 %
 % Theta is NHertz by Nmel, where NHertz =  Nt/2 + 1;
 
-%Convert upper analysis limit from Hz to mel, GWEMS filter paper Eqn. (1)
+%Convert upper analysis limit from Hz to mel, FMS filter paper Eqn. (1)
 fTildeU = 2595*log10(1+fu/700); 
 
-%Find mel interval, GWEMS filter paper Eqn. (2)
+%Find mel interval, FMS filter paper Eqn. (2)
 deltaTilda = fTildeU/(Nmel+1);  %divid
 
 %Find band limits and centers in mel
 bTilda = deltaTilda*[0:Nmel+1];
 
-%Convert to Hz, GWEMS filter paper Eqn. (3)
+%Convert to Hz, FMS filter paper Eqn. (3)
 b = 700*(10.^(bTilda/2595)-1);
 
-%Calculate DFT frequencies in Hz, GWEMS filter paper Eqn. (5)
+%Calculate DFT frequencies in Hz, FMS filter paper Eqn. (5)
 f = [0:Nt/2]*fs/Nt;
 
-%Calculate filter normalizations, GWEMS filter paper Eqn. (6)
+%Calculate filter normalizations, FMS filter paper Eqn. (6)
 eta = 1./( b(3:Nmel+2) - b(1:Nmel) );
 
 NHertz = Nt/2 + 1; %Number of DFT samples
 
-%Calculate filterbank, GWEMS filter paper Eqn. (4)
+%Calculate filterbank, FMS filter paper Eqn. (4)
 Theta = zeros(NHertz,Nmel);
 for i = 0:Nmel-1 %Loop over bands
     for k = 0:NHertz-1 %Loop over DFT samples
@@ -210,35 +207,35 @@ function Phi = makePhi(fs, Ns, Nf)
 N = floor(Nf/2) + 1; %number of spectral samples available
 Nmod = 8; %set number of modulation spectrum samples
 
-%Calculate log-scale frequency interval, GWEMS filter paper Eqn. (8)
+%Calculate log-scale frequency interval, FMS filter paper Eqn. (8)
 DeltaBar = ( log2(128) - log2(4) )/(Nmod - 1);
 
 %Calculate log-scale initial filter center frequencies, 
-%GWEMS filter paper Eqn. (9)
+%FMS filter paper Eqn. (9)
 bBar = log2(4) + [0:Nmod-1]*DeltaBar;
 
-%Calculate DFT bin spacing, GWEMS filter paper Eqn. (10)
+%Calculate DFT bin spacing, FMS filter paper Eqn. (10)
 Deltah = fs/(Ns*Nf);
 
-%Calculate DFT bin log frequencies, GWEMS filter paper Eqn. (11)
+%Calculate DFT bin log frequencies, FMS filter paper Eqn. (11)
 fBar = log2([0:N-1]*Deltah);
 
 %Adjust log-scale initial filter center frequencies to fall on DFT bins,
-%GWEMS filter paper Eqn. (12)
+%FMS filter paper Eqn. (12)
 bBarPrime = log2( round( ( 2.^bBar )/Deltah ) * Deltah );
 
-%Calculate filter half-widths, GWEMS filter paper Eqn. (13)
+%Calculate filter half-widths, FMS filter paper Eqn. (13)
 deltaBar = DeltaBar/(2-sqrt(2));
 
 %Calculate filter weights to account for number of DFT samples spanned
-%by each filter, GWEMS filter paper Eqn. (15)
+%by each filter, FMS filter paper Eqn. (15)
 nu = zeros(1,Nmod);
 for m = 0:Nmod-1
     nu(m+1) = 1/sum( ( -deltaBar <= ( fBar - bBarPrime(m+1) ) ) & ...
         ( ( fBar - bBarPrime(m+1) ) < deltaBar ) );
 end
 
-%Calculate filterbank, GWEMS filter paper Eqn. (14)
+%Calculate filterbank, FMS filter paper Eqn. (14)
 Phi = zeros(N,Nmod);
 for m = 0:Nmod - 1
     for k = 0:N - 1

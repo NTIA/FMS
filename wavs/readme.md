@@ -1,4 +1,4 @@
-# Example Audio Files for Demonstration of GWEMS Code 
+# Example Audio Files for Demonstration of FMS Code 
 All files are mono and contain speech.
 The sample rates and durations of the six audio files are:
 

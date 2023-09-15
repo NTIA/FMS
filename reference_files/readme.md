@@ -1,4 +1,4 @@
-# Reference Files for Checking GWEMS Implementations
+# Reference Files for Checking FMS Implementations
 
-These files were produced by GWEMS.m via demo.m and can be used to check other GWEMS implementations.
+These files were produced by FMS.m via demo.m and can be used to check other FMS implementations.
 Full details are provided in matlab/readme.md

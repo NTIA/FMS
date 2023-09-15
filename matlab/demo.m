@@ -1,4 +1,4 @@
-% Calls GWEMS.m to create PsiM and PsiP for 6 different audio files.
+% Calls FMS.m to create PsiM and PsiP for 6 different audio files.
 % Results are saved in .mat and .csv files.
 %
 % Also contains example code to compare new results with reference results
@@ -20,7 +20,7 @@ if ~exist(output_folder, 'dir')
 end
 for i= 1:6 %Loop over audio files listed
     filepath = fullfile(wav_path, fnames{i});
-    [PsiM, PsiP] = GWEMS(filepath);     %Apply GWEMS.m
+    [PsiM, PsiP] = FMS(filepath);     %Apply FMS.m
     [~, name, ~] = fileparts(fnames{i}); %Extract base filename
     save(fullfile(output_folder, [name,'.mat']), 'PsiM', 'PsiP'); %Save both variables in .mat
     writematrix(PsiM,fullfile(output_folder, [name,'PsiM.csv']));    %Save PsiM in .csv
