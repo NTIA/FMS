@@ -1,10 +1,6 @@
 import os
-
 import numpy as np
-
 from scipy.io import wavfile
-
-# from torchaudio import load
 
 
 def fms(audio_filename):
@@ -141,7 +137,7 @@ def fms(audio_filename):
 
 def load_audio(audio_filename):
     """
-    Load floating point representation of audio file
+    Load floating point representation of audio file.
 
     Parameters
     ----------
