@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "fms"
+version = "0.1.0"
+description = "Implementation of the fixed-size modulation spectrum (FMS), a perceptually-relevant, fixed-size representation for an audio file."
+authors = ["Jaden Pieper <jpieper@ntia.gov>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
