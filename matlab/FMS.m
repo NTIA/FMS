@@ -1,6 +1,7 @@
 function [PsiM, PsiP] = FMS(audioFilename)
 % Creates fixed-size modulation spectrum (FMS) as described in
-% XXX
+% Voran, S. and Pieper, J. "A Powerful, Fixed-Size Modulation 
+% Spectrum Representation for Perceptually-Consistent Speech Evaluation."
 %
 % Usage: [PsiM, PsiP] = FMS(audioFilename)
 %
