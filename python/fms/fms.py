@@ -8,11 +8,10 @@ def fms(audio_filename):
     Creates fixed-size modulation spectrum (FMS).
 
     Creates fixed-size modulation spectrum (FMS) as described in
-    XXX.
-        Usage: psi_m, psi_p = fms(audio_filename)
+    Voran, S. and Pieper, J. "A Powerful, Fixed-Size Modulation Spectrum
+    Representation for Perceptually-Consistent Speech Evaluation."
 
-    audio_filename is expected to be a .wav file with
-
+    Usage: psi_m, psi_p = fms(audio_filename)
 
     Parameters
     ----------
@@ -23,10 +22,10 @@ def fms(audio_filename):
 
     Returns
     -------
-    psi_m : TODO: psi_m type
-        Magnitude FMS.
-    psi_p : TODO: psi_p type
-        Phase FMS.
+    psi_m : numpy.ndarray
+        Magnitude FMS, Nmel x 8 array..
+    psi_p : numpy.ndarray
+        Phase FMS, Nmel x 8 array..
 
     Notes
     -----
@@ -45,12 +44,12 @@ def fms(audio_filename):
     bands above 32 cover the range from 8 kHz up to near the Nyquist
     frequency for the given sample rate.
 
-    # TODO: Add python info here
-    Written January 12, 2023 by S. Voran at Institute for Telecommunication
+    Written for MATLAB January 12, 2023 by S. Voran at Institute for Telecommunication
     Sciences in Boulder, Colorado, United States: svoran@ntia.gov
     Written and tested using MATLAB Version: 9.11.0.1809720 (R2021b) Update 1
-    Note that Matlab uses one-based indexing, while the papers use
-    zero-based indexing
+
+    Ported to Python September 19, 2023 by J. Pieper at Institute for Telecommunication
+    Sciences in Boulder, Colorado, United States: jpieper@ntia.gov
     """
     # Check that .wav file has been specified
     _, ext = os.path.splitext(audio_filename)
