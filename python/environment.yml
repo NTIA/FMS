@@ -1,0 +1,14 @@
+name: fms
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - jupyter
+  - IPython
+  - numpy
+  - poetry
+  - scipy
+  - pip
+  - pip:
+    - pre-commit # Also maybe delete this later?
