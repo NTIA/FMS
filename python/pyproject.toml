@@ -2,7 +2,7 @@
 name = "fms"
 version = "0.1.0"
 description = "Implementation of the fixed-size modulation spectrum (FMS), a perceptually-relevant, fixed-size representation for an audio file."
-authors = ["Jaden Pieper <jpieper@ntia.gov>"]
+authors = ["Jaden Pieper <jpieper@ntia.gov>", "Steve Voran <svoran@ntia.gov>"]
 readme = "README.md"
 license = "License.md"
 
