@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import wavfile
 
 
-def fms(audio_filename):
+def fms(audio, fs, time_dim=0):
     """
     Creates fixed-size modulation spectrum (FMS).
 
@@ -51,20 +51,21 @@ def fms(audio_filename):
     Ported to Python September 19, 2023 by J. Pieper at Institute for Telecommunication
     Sciences in Boulder, Colorado, United States: jpieper@ntia.gov
     """
-    # Check that .wav file has been specified
-    _, ext = os.path.splitext(audio_filename)
-    if ext != ".wav":
-        raise ValueError("audio_filename is expected to name a .wav file.")
+    # # Check that .wav file has been specified
+    # _, ext = os.path.splitext(audio_filename)
+    # if ext != ".wav":
+    #     raise ValueError("audio_filename is expected to name a .wav file.")
 
-    # Read audio samples and sample rate
-    fs, x = load_audio(audio_filename)
+    # # Read audio samples and sample rate
+    # fs, audio = load_audio(audio_filename)
     # Extract channel 1
-    if len(x.shape) > 1:
-        # x = x[:, 0]
-        x = x[0]
-    x = x[None, :]
+    if len(audio.shape) > 1:
+        # TODO make this work with regardless of how audio is strcutured in terms of channel/time dimensions
+        # audio = audio[:, 0]
+        audio = audio[0]
+    audio = audio[None, :]
     # Number of audio samples available
-    Na = x.shape[1]
+    Na = audio.shape[1]
     # Check for sufficient audio duration
     if Na / fs < 0.060:
         raise ValueError(
@@ -99,7 +100,7 @@ def fms(audio_filename):
     xW = np.zeros((Nf, Nw))
     for f in range(Nf):
         sample_ix = np.arange(f * Ns, f * Ns + Nw)
-        xW[f, :] = np.multiply(x[0, sample_ix], hammingWindow)
+        xW[f, :] = np.multiply(audio[0, sample_ix], hammingWindow)
 
     # Zero pad matrix so frames have length Nt  - Eqn. (2)
     xTildeW = np.concatenate([xW, np.zeros((Nf, Nt - Nw))], axis=1)
@@ -147,7 +148,7 @@ def load_audio(audio_filename):
     -------
     fs : int
         Sample rate.
-    x : np.ndarray
+    audio : np.ndarray
         Floating point representation of audio file.
 
     Raises
@@ -156,19 +157,19 @@ def load_audio(audio_filename):
         Audio is not unsigned 8 bit int, signed 16 or 32 bit int, or floating
         point.
     """
-    fs, x = wavfile.read(audio_filename)
-    # Convert x to float representation (between -1 and 1)
-    if np.issubdtype(x.dtype, np.floating):
-        x = x
-    elif x.dtype is np.dtype("uint8"):
-        x = (x.astype("float") - 64) / 64
-    elif x.dtype is np.dtype("int16"):
-        x = x.astype("float") / (2**15)
-    elif x.dtype is np.dtype("int32"):
-        x = x.astype("float") / (2**31)
+    fs, audio = wavfile.read(audio_filename)
+    # Convert audio to float representation (between -1 and 1)
+    if np.issubdtype(audio.dtype, np.floating):
+        audio = audio
+    elif audio.dtype is np.dtype("uint8"):
+        audio = (audio.astype("float") - 64) / 64
+    elif audio.dtype is np.dtype("int16"):
+        audio = audio.astype("float") / (2**15)
+    elif audio.dtype is np.dtype("int32"):
+        audio = audio.astype("float") / (2**31)
     else:
-        raise RuntimeError(f"unknown audio type '{x.dtype}'")
-    return fs, x
+        raise RuntimeError(f"unknown audio type '{audio.dtype}'")
+    return fs, audio
 
 
 def make_theta(fs, Nt, Nmel, fu):
