@@ -51,13 +51,6 @@ def fms(audio, fs, time_dim=0):
     Ported to Python September 19, 2023 by J. Pieper at Institute for Telecommunication
     Sciences in Boulder, Colorado, United States: jpieper@ntia.gov
     """
-    # # Check that .wav file has been specified
-    # _, ext = os.path.splitext(audio_filename)
-    # if ext != ".wav":
-    #     raise ValueError("audio_filename is expected to name a .wav file.")
-
-    # # Read audio samples and sample rate
-    # fs, audio = load_audio(audio_filename)
     # Extract channel 1
     if len(audio.shape) > 1:
         # TODO make this work with regardless of how audio is strcutured in terms of channel/time dimensions

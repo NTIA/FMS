@@ -28,8 +28,10 @@ class TestFMS(unittest.TestCase):
     def test_fms(self):
         for fname in self.fnames:
             filepath = os.path.join(self.wav_path, fname)
+            # Load audio
+            fs, audio = fms.load_audio(filepath)
             # Get FMS representation
-            PsiM, PsiP = fms.fms(filepath)
+            PsiM, PsiP = fms.fms(audio, fs)
             rep = dict(magnitude=PsiM, phase=PsiP)
 
             name = os.path.basename(filepath)
