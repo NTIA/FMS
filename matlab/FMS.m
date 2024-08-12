@@ -48,7 +48,7 @@ x = x(:,1); %extract channel 1
 if length(x)/fs < 3
     warning(['Audio file is less than 3 sec. long, signal will ' ...
         'be zero padded to 3.0 sec.'])
-    nShort = length(x) - 3*fs;  %Number of zeros needed
+    nShort = 3*fs - length(x);  %Number of zeros needed
     x = [x;zeros(nShort,1)];    %Add needed zeros
 end
 
