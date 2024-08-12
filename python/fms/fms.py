@@ -88,7 +88,7 @@ def fms(audio, fs, time_dim=0):
     # Set number of samples in DFT
     Nt = 2 * Nw
 
-    # Make matrix Theta which implements filter bank that creates mel specrrum (Appendix A)
+    # Make matrix Theta which implements filter bank that creates mel spectrum (Appendix A)
 
     Theta = make_theta(fs, Nt, Nmel, fu)
 
