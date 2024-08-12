@@ -1,4 +1,5 @@
 import os
+import warnings
 import numpy as np
 from scipy.io import wavfile
 
@@ -11,36 +12,39 @@ def fms(audio, fs, time_dim=0):
     Voran, S. and Pieper, J. "A Powerful, Fixed-Size Modulation Spectrum
     Representation for Perceptually-Consistent Speech Evaluation."
 
-    Usage: psi_m, psi_p = fms(audio_filename)
+    Usage:
+    fs, audio = fms.load_audio(audio_filename)
+    psi_m, psi_p = fms.fms(audio)
 
     Parameters
     ----------
     audio_filename : str
-        A .wav file with fs = 16, 32, 48, 22.05 or 44.1k.  Duration needs to
-        be at least 60 ms. If file has more than one channel, then channel 1 is
-        used.
+        A .wav file with fs = 16, 32, 48, 22.05 or 44.1k.  Three seconds of audio are needed so files with duration
+        less than three seconds will be zero padded to 3 seconds. If file has
+        more than one channel, then channel 1 is used.
 
     Returns
     -------
     psi_m : numpy.ndarray
-        Magnitude FMS, Nmel x 8 array..
+        Magnitude FMS, Nmel x 11 array.
     psi_p : numpy.ndarray
-        Phase FMS, Nmel x 8 array..
+        Phase FMS, Nmel x 11 array.
 
     Notes
     -----
-    PsiM and PsiP are matrices with size Nmel by 8. They contain the
-    magnitude and phase FMS, respectively, as given in Eqn. (6).
+    PsiM and PsiP are matrices with size Nmel by 11. They contain the
+    magnitude and phase FMS, respectively, as given in Eqn. (2).
     Nmel depends on fs:
     fs      Nmel
     ------   ----
     16k       32
+    24k       36
     32k       40
     48k       45
     22.05k    35
     44.1k     44
 
-    For all 5 sample rates, the lower 32 mel bands match exactly. The
+    For all 6 sample rates, the lower 32 mel bands match exactly. The
     bands above 32 cover the range from 8 kHz up to near the Nyquist
     frequency for the given sample rate.
 
@@ -51,6 +55,7 @@ def fms(audio, fs, time_dim=0):
     Ported to Python September 19, 2023 by J. Pieper at Institute for Telecommunication
     Sciences in Boulder, Colorado, United States: jpieper@ntia.gov
     """
+
     # Extract channel 1
     if len(audio.shape) > 1:
         # TODO make this work with regardless of how audio is strcutured in terms of channel/time dimensions
@@ -60,10 +65,16 @@ def fms(audio, fs, time_dim=0):
     # Number of audio samples available
     Na = audio.shape[1]
     # Check for sufficient audio duration
-    if Na / fs < 0.060:
-        raise ValueError(
-            "File contains less than 60 ms of audio which is not suitable for FMS"
+    if Na / fs < 3:
+        warnings.warn(
+            "Audio file is less than 3 sec. long, signal will be zero padded to 3.0 sec."
         )
+        # Number of zeros needed
+        nShort = 3 * fs - Na
+        # Zero padding
+        audio = np.append(audio, np.zeros(nShort))
+        audio = audio[None, :]
+        Na = audio.shape[1]
 
     Nw, Ns, Nmel, fu = get_constants(fs)
     # Sample rate fs determines
@@ -77,11 +88,12 @@ def fms(audio, fs, time_dim=0):
     # Set number of samples in DFT
     Nt = 2 * Nw
 
-    # Make matrix Theta which implements filter bank that creates mel specrrum
+    # Make matrix Theta which implements filter bank that creates mel spectrum (Appendix A)
+
     Theta = make_theta(fs, Nt, Nmel, fu)
 
     # Make matrix Phi which implements filterbank that creates modulation
-    # spectrum
+    # spectrum (Appendix B)
     Phi = makePhi(fs, Ns, Nf)
 
     # Generate normalized periodic Hamming Window with Nw samples - Eqn. (1)
@@ -186,23 +198,22 @@ def make_theta(fs, Nt, Nmel, fu):
         NHertz by Nmel matrix representing filter bank that creates mel
         spectrum. NHertz = Nt/2 + 1.
     """
-    # Convert upper analysis limit from Hz to mel, GWEMS filter paper Eqn. (1)
+    # Convert upper analysis limit from Hz to mel, Eqn. (14)
     fTildeU = 2595 * np.log10(1 + fu / 700)
 
-    # %Find mel interval, GWEMS filter paper Eqn. (2)
+    # %Find mel interval, Eqn. (15)
     deltaTilda = fTildeU / (Nmel + 1)
 
     # Find band limits and centers in mel
     bTilda = deltaTilda * np.arange(0, Nmel + 2)
 
-    # %Convert to Hz, GWEMS filter paper Eqn. (3)
-    # b = 700 * (10.0 ^ (bTilda / 2595) - 1)
+    # Convert to Hz, Eqn. (16)
     b = 700 * (np.power(10.0, (bTilda / 2595)) - 1)
 
-    # %Calculate DFT frequencies in Hz, GWEMS filter paper Eqn. (5)
+    # %Calculate DFT frequencies in Hz, Eqn. (18)
     f = np.arange(0, Nt / 2 + 1) * fs / Nt
 
-    # %Calculate filter normalizations, GWEMS filter paper Eqn. (6)
+    # %Calculate filter normalizations, Eqn. (19)
     # eta = 1./( b(3:Nmel+2) - b(1:Nmel) )
     eta = np.divide(1, b[2:] - b[:-2])
 
@@ -212,7 +223,7 @@ def make_theta(fs, Nt, Nmel, fu):
     # Convert to ints to make python happy
     NHertz = int(NHertz)
     Nmel = int(Nmel)
-    # Calculate filterbank, GWEMS filter paper Eqn. (4)
+    # Calculate filterbank, Eqn. (17)
     Theta = np.zeros((NHertz, Nmel))
 
     for i in range(Nmel):
@@ -246,42 +257,41 @@ def makePhi(fs, Ns, Nf):
     Returns
     -------
     Phi : np.ndarray
-        N by Nmod, where N = floor(Nf/2) + 1 and Nmod is 8
+        N by Nmod, where N = floor(Nf/2) + 1 and Nmod is 11
     """
     # number of spectral samples available
     N = np.floor(Nf / 2).astype(int) + 1
     # set number of modulation spectrum samples
-    Nmod = 8
+    Nmod = 11
 
-    # Calculate log-scale frequency interval, GWEMS filter paper Eqn. (8)
-    DeltaBar = (np.log2(128) - np.log2(4)) / (Nmod - 1)
+    # Calculate log-scale frequency interval, Eqn. (21)
+    DeltaBar = (np.log2(128) - np.log2(0.25)) / (Nmod - 2)
 
     # Calculate log-scale initial filter center frequencies,
-    # GWEMS filter paper Eqn. (9)
-    bBar = np.log2(4) + np.arange(0, Nmod) * DeltaBar
+    # Eqn. (22)
+    bBar = np.log2(0.25) + np.arange(0, Nmod - 1) * DeltaBar
 
-    # Calculate DFT bin spacing, GWEMS filter paper Eqn. (10)
+    # Calculate thresholds, Eqn. (23)
+    delta = np.zeros(Nmod)
+    delta[0] = -np.inf
+    delta[1:-1] = (bBar[:-1] + bBar[1:]) / 2
+    delta[-1] = np.inf
+
+    # Calculate DFT bin spacing, Eqn. (24)
     Deltah = fs / (Ns * Nf)
 
     # Ignore warning on log2(0)
     with np.errstate(divide="ignore"):
-        # Calculate DFT bin log frequencies, GWEMS filter paper Eqn. (11)
+        # Calculate DFT bin log frequencies, Eqn. (25)
         fBar = np.log2(np.arange(0, N) * Deltah)
 
-    # Adjust log-scale initial filter center frequencies to fall on DFT bins,
-    # GWEMS filter paper Eqn. (12)
-    # bBarPrime = np.log2( np.round( ( 2.^bBar )/Deltah ) * Deltah );
-    bBarPrime = np.log2(np.round(np.power(2, bBar) / Deltah) * Deltah)
-
-    # Calculate filter half-widths, GWEMS filter paper Eqn. (13)
-    deltaBar = DeltaBar / (2 - np.sqrt(2))
-
-    # %Calculate filter weights to account for number of DFT samples spanned
-    # %by each filter, GWEMS filter paper Eqn. (15)
+    # Calculate filter weights to account for number of DFT samples spanned
+    # by each filter, Eqn. (28)
     nu = []
-    for m in range(Nmod):
-        cond1 = -deltaBar <= (fBar - bBarPrime[m])
-        cond2 = (fBar - bBarPrime[m]) < deltaBar
+    for m in range(Nmod - 1):
+        cond1 = delta[m] < fBar
+        cond2 = fBar <= delta[m + 1]
+
         sum = np.sum(cond1 & cond2)
         if sum == 0:
             val = np.inf
@@ -290,19 +300,14 @@ def makePhi(fs, Ns, Nf):
 
         nu.append(val)
 
-    # Calculate filterbank, GWEMS filter paper Eqn. (14)
+    # Calculate filterbank
     Phi = np.zeros((N, Nmod))
+    # Eqn. (26)
+    Phi[0, 0] = 1
+    for m in range(Nmod - 1):
+        indexList = np.where((delta[m] < fBar) & (fBar <= delta[m + 1]))
+        Phi[indexList, m + 1] = nu[m]
 
-    for m in range(Nmod):
-        for k in range(N):
-            if (bBarPrime[m] - deltaBar <= fBar[k]) and (fBar[k] < bBarPrime[m]):
-                # Lower slope
-                Phi[k, m] = nu[m] * (fBar[k] - (bBarPrime[m] - deltaBar)) / deltaBar
-            elif (bBarPrime[m] <= fBar[k]) and (fBar[k] < bBarPrime[m] + deltaBar):
-                # Upper slope
-                Phi[k, m] = nu[m] * (1 - (fBar[k] - bBarPrime[m]) / deltaBar)
-            else:
-                Phi[k, m] = 0
     return Phi
 
 
@@ -365,25 +370,28 @@ def get_constants(fs):
     Audio sample rate is used to look up Nw and Ns.
     Audio sample rate is used calculate Nmel and fu.
     """
-    # Select paramters based on sample rate (from Table 2)
+    # Select paramters based on sample rate (from Table 1)
     if fs == 16000:
         Nw = 256
+        Ns = 32
+    elif fs == 24000:
+        Nw = 384
         Ns = 48
     elif fs == 32000:
         Nw = 512
-        Ns = 96
+        Ns = 64
     elif fs == 48000:
         Nw = 768
-        Ns = 144
+        Ns = 96
     elif fs == 22050:
         Nw = 384
-        Ns = 66
+        Ns = 44
     elif fs == 44100:
         Nw = 768
-        Ns = 132
+        Ns = 88
     else:
         raise ValueError(
-            f"Unexepcted sample rate {fs}, (16k, 32, 48, 22.05, and 44.1k are expected)."
+            f"Unexepcted sample rate {fs}, (16k, 24, 32, 48, 22.05, and 44.1k are expected)."
         )
     # Number of mel spectrum samples desired in DC to 8 kHz
     nWBmel = 32
